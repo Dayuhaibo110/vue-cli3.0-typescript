@@ -19,6 +19,14 @@
         </el-dropdown-menu>
       </el-dropdown>
     </el-header>
+    <el-row>
+        <el-button
+          @click.native.prevent="changeDate()"
+          type="text"
+          size="small">
+          修改数据
+        </el-button>
+      </el-row>
     <el-container>
       <el-aside width="210px" class="app-aside">
         <!-- 左侧导航 -->
@@ -33,11 +41,36 @@
             <i class="el-icon-people"></i>
             <span slot="title" style='color:#ffd04b'>Welcome {{ currentUser.username }}</span>
           </li>
-          <NavBar :data='menuItems'/>
-
+          <NavBar :data='routerPathState.router'/>
         </el-menu>
       </el-aside>
       <el-main class="app-main">
+        <CommonTable
+          :tHeadList='tHeadList'
+          :dataList='mockState.mockData'
+        >
+            <template slot="self_section">
+              <el-table-column
+                label="操作"
+                width="150">
+                  <template slot-scope="scope">
+                    <el-button
+                      @click.native.prevent="editRow(scope.row,scope.$index)"
+                      type="text"
+                      size="small">
+                      编辑
+                    </el-button>
+                  </template>
+              </el-table-column>
+            </template>
+        </CommonTable>
+        <Pagination
+          :page='page'
+          :size='size'
+          :total='total'
+          :paginationSizeChange='paginationSizeChange'
+          :paginationPageChange='paginationPageChange'/>
+
         <!-- 右侧主题内容 -->
         <!-- <router-view/> -->
       </el-main>
@@ -48,28 +81,65 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { Action, State } from 'vuex-class';
+import { GET_MOCK, SET_MOCK } from '@/store/type';
 import NavBar from '@/components/NavBar.vue';
+import Pagination from '@/components/Pagination.vue';
+import CommonTable from '@/components/CommonTable.vue';
+import { mapState } from 'vuex';
+import { Message } from 'element-ui';
 
 const session = window.sessionStorage;
+// 仅有home和prop属性课写在@component里其余写在extend里
 @Component({
   components:{
     NavBar,
+    Pagination,
+    CommonTable
+  },
+  computed:{
+    ...mapState(['mock']),
   }
 })
 
 export default class Home extends Vue {
 
-  // ==============================================
   // 获取store值
   @State('routerPath') public routerPathState: any;
+  @State('mock') public mockState: any;
 
+  @Action(GET_MOCK) public getMock: any;
+  @Action(SET_MOCK) public setMock: any;
+
+
+
+  // ==============================================
   // 声明变量
   public currentUser = {
     username: 'God'
-  }
+  };
 
   public menuItems = [];
 
+  public total = 0;
+  public page = 0;
+  public size = 10;
+
+  public tHeadList = [{
+    prop: 'number',
+    label: '序号',
+  }, {
+    prop: 'createdAt',
+    label: '创建时间',
+  }, {
+    prop: 'updatedAt',
+    label: '更新时间',
+  }];
+
+  public fileList3 = [];
+
+  public value1 = '';
+
+  public loading = false;
 
   // ==============================================
   // 封装函数
@@ -85,10 +155,48 @@ export default class Home extends Vue {
     this.$router.push('/login');
   }
 
+  public paginationSizeChange = (size: Number) => {
+    console.log(size);
+  }
+
+  public paginationPageChange = (page: Number) => {
+    console.log(page);
+  }
+
+  public editRow = (data:any, index: Number) => {
+    console.log(data);
+  }
+
+  public handleChange(file: String, fileList: any[]) {
+    console.log(file);
+    console.log(fileList);
+  }
+
+  public changeDate () {
+    this.setMock().then(() => {
+      // this.dataList = this.mockState.mockData;
+    })
+  }
+
   // ==============================================
   // 声明周期
   public mounted () {
-    this.menuItems = this.routerPathState.router;
+    console.log(this.mockState);
+    // this.menuItems = this.routerPathState.router;
+    // this.loading = true;
+    this.getMock({size: 10, page: 1}).then((data: any)=> {
+      setTimeout(() => {
+        this.loading = false;
+      }, 3000)
+    }, (error:any) => {
+      this.loading = false;
+      Message({
+        type: 'error',
+        message: error,
+        duration: 5000
+      })
+    })
+
   }
 }
 </script>
